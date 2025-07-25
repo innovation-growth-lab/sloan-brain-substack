@@ -1,0 +1,136 @@
+Metadata-Version: 2.4
+Name: sloan-brain-substack
+Version: 0.1.0
+Summary: A pythonic Substack scraper for monitoring publication updates
+Requires-Python: >=3.13
+Description-Content-Type: text/markdown
+Requires-Dist: httpx>=0.27.0
+Requires-Dist: beautifulsoup4>=4.12.0
+Requires-Dist: sqlalchemy>=2.0.0
+Requires-Dist: psycopg2-binary>=2.9.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0.0; extra == "dev"
+Requires-Dist: pytest-mock>=3.10.0; extra == "dev"
+Requires-Dist: pre-commit>=3.0.0; extra == "dev"
+
+# Sloan Brain Substack
+
+A library for monitoring Substack newsletters with database persistence and session support.
+
+## Installation
+
+```bash
+pip install -e .
+```
+
+## Usage
+
+### Database-Backed Monitoring (Recommended)
+
+Store newsletter data in a PostgreSQL database and compare against existing data:
+
+```python
+from sloan_brain_substack import DatabaseManager, SubstackMonitor, Auth
+
+# Set up database connection (PostgreSQL on EC2)
+connection_string = "postgresql://user:password@your-ec2-instance:5432/substack_db"
+db_manager = DatabaseManager(connection_string)
+db_manager.create_tables()
+
+# Initialize monitor
+monitor = SubstackMonitor(db_manager)
+
+# Add newsletters to monitor
+monitor.add_newsletter("https://www.oneusefulthing.org")
+
+# Check for new posts (compares against database, not time)
+results = monitor.check_all_newsletters()
+
+for result in results:
+    if result.new_posts:
+        print(f"New posts in {result.newsletter_name}: {len(result.new_posts)}")
+        for post in result.new_posts:
+            print(f"  - {post['title']}")
+```
+
+### Direct Newsletter Access
+
+Access newsletter content directly without database storage:
+
+```python
+from sloan_brain_substack import Newsletter
+
+newsletter = Newsletter("https://www.oneusefulthing.org")
+posts = newsletter.get_posts(limit=10)
+
+for post in posts:
+    print(f"{post.title} - {post.post_date}")
+```
+
+### Authentication for Paywalled Content
+
+To access content from newsletters you're subscribed to:
+
+```python
+from sloan_brain_substack import Newsletter, Auth
+
+# Load session cookies from browser export
+auth = Auth(cookies_path="cookies.json")
+
+# Access newsletters you're subscribed to
+newsletter = Newsletter("https://paid-newsletter.substack.com", auth=auth)
+posts = newsletter.get_posts(limit=10)
+
+# Or use with database monitoring
+monitor = SubstackMonitor(db_manager, auth=auth)
+```
+
+## Database Schema
+
+The library uses SQLAlchemy with these models:
+
+- `Newsletter`: Stores newsletter metadata (name, URL, description)
+- `Post`: Stores individual posts with relationships to newsletters
+
+## API Reference
+
+### DatabaseManager
+
+- `create_tables()` - Create database schema
+- `get_session()` - Get SQLAlchemy session
+- `close()` - Close database connection
+
+### SubstackMonitor
+
+- `add_newsletter(url, name=None)` - Add newsletter to monitoring
+- `check_newsletter_updates(url)` - Check specific newsletter for new posts
+- `check_all_newsletters()` - Check all monitored newsletters
+- `get_newsletter_stats(url)` - Get statistics for a newsletter
+
+### Direct Client Access
+
+- `Newsletter` - Access newsletter posts and metadata
+- `Post` - Access individual post content
+- `User` - Access user profiles and subscriptions
+- `Auth` - Handle authentication for paywalled content
+
+## Dependencies
+
+- httpx - HTTP client
+- beautifulsoup4 - HTML parsing
+- sqlalchemy - Database ORM
+- psycopg2-binary - PostgreSQL adapter
+- python>=3.13
+
+## Development
+
+```bash
+pip install -e ".[dev]"
+pytest
+pre-commit run --all-files
+```
+
+## License
+
+MIT License 

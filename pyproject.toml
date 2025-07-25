@@ -1,0 +1,71 @@
+[build-system]
+requires = [ "setuptools",]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sloan-brain-substack"
+version = "0.1.0"
+readme = "README.md"
+description = "A pythonic Substack scraper for monitoring publication updates"
+requires-python = ">=3.13"
+dependencies = [
+    "httpx>=0.27.0",
+    "beautifulsoup4>=4.12.0",
+    "sqlalchemy>=2.0.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.10.0",
+    "pre-commit>=3.0.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["sloan_brain_substack*"]
+namespaces = false
+
+[tool.basedpyright]
+typeCheckingMode = "basic"
+exclude = ["**/node_modules", "**/__pycache__", "**/.*", ".venv"]
+reportImplicitStringConcatenation = false
+reportMissingImports = false
+reportArgumentType = false
+
+[tool.ruff]
+target-version = "py313"
+line-length = 120
+preview = true
+
+[tool.ruff.lint]
+select = [
+    "ANN", # flake8-annotations
+    "B",   # flake8-bugbear: Likely bugs
+    "C",   # flake8-comprehensions and mccabe complexity
+    "D",   # pydocstyle: Docstring conventions
+    "E",   # pycodestyle: Errors (default)
+    "F",   # pyflakes: Linter
+    "I",   # isort
+    "N",   # pep8-naming: Naming conventions
+    "W",   # pycodestyle: Warnings (default)
+]
+ignore = [
+    "D100",   # Warns about missing module-level docstrings
+    "S101",   # Warns about assert being removed when compiled
+    "ANN401", # Forces non-dynamic hints in main() functions
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "E402", "D104"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["project-name"]
+
+[tool.ruff.format]
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
